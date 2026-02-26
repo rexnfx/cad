@@ -31,8 +31,9 @@ line += line2
 profile = make_face(line.edges())
 sketch = rect - profile
 box = extrude(sketch, amount =20)
+
 #box = box
-export_stl(box, "elite_magwell")
+export_stl(box, "C:\\Code\\Python\\cad\\elite_magwell.stl")
 
 show(box)
 #show(line, rect)
