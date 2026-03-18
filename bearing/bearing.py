@@ -53,7 +53,7 @@ def make_outter_race(scale_f, clearance):
     base =  extrude(circ_face, scale_f * -1)
 
     ring_face = make_face(big_circ)
-    ring_circ = Pos(0,0,scale_f *-1) *Circle(radius= scale_f * 8 , align=Align.CENTER)
+    ring_circ = Pos(0,0,scale_f *-1) *Circle(radius= scale_f * 8.01 , align=Align.CENTER)
     ring_face -= ring_circ
     ring = extrude(ring_face, scale_f * 7)
 
@@ -62,7 +62,7 @@ def make_outter_race(scale_f, clearance):
     return race
 
 def make_inner_race(scale_f, clearance):
-    big_circ = Pos(0,0,scale_f *-1) * Circle(radius = scale_f * 5.5 - clearance, align=Align.CENTER)
+    big_circ = Pos(0,0,scale_f *-1) * Circle(radius = scale_f * 5.49 - clearance, align=Align.CENTER)
     circ_face = make_face(big_circ)
 
     mid_circ = Pos(0,0,scale_f *-1) *Circle(radius = scale_f * 2, align=Align.CENTER)
