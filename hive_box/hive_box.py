@@ -48,17 +48,46 @@ for r in range(7):
     section = Pos(offsets[r][0], offsets[r][1]) * section
     sections.append(section)
 
+inside_big_hex= Pos(0,big_width) * make_hex(big_width * 3 + 26)
 big_hex= Pos(0,big_width) * make_hex(big_width * 3 + 30)
 bigger_hex= Pos(0,big_width) * make_hex(big_width * 3 + 40)
 
-squares = [ 
-        Pos(big_width - 10,  -10)                * Rectangle(10, 10),
-        Pos(big_width - 10,  2 * big_width + 10) * Rectangle(10, 10),
-        Pos(-big_width + 10, -10)                * Rectangle(10, 10),
-        Pos(-big_width + 10, 2 * big_width + 10) * Rectangle(10, 10)
-        ]
+def get_squares(h, w):
+    squares = [ 
+            Pos(big_width - 10,  -10)                * Rectangle(w, h),
+            Pos(big_width - 10,  2 * big_width + 10) * Rectangle(w, h),
+            Pos(-big_width + 10, -10)                * Rectangle(w, h),
+            Pos(-big_width + 10, 2 * big_width + 10) * Rectangle(w, h)
+            ]
+    return squares
 
-show(sections, big_hex, bigger_hex, squares)
+def make_bottom(bigger_hex, big_hex, sections):
+    bottom_shape = make_face(bigger_hex.edges())
+
+    squares = get_squares(10, 25)
+    for r in range(4):
+        bottom_shape -= squares[r]
+    bottom = extrude(bottom_shape, 5)
+
+    big_hex = Pos(0,0,5) * big_hex
+    big_hex_face = make_face(big_hex.edges())
+
+    for r in range(7):
+        section = Pos(0,0,5) * sections[r]
+        section_face = make_face(section.edges())
+        big_hex_face -= section_face
+
+    squares = get_squares(10, 10)
+    for r in range(4):
+        sqr = Pos(0,0,5) * squares[r]
+        big_hex_face -= sqr
+
+    big_hex_ex = extrude(big_hex_face, 50)
+
+    bottom += big_hex_ex
+    return bottom
+
+show(sections, big_hex, inside_big_hex, bigger_hex, make_bottom(bigger_hex, big_hex, sections))
 
 # show( outter_race)   
 
