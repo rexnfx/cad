@@ -10,19 +10,19 @@ width = 43
 big_width = 48
 
 
-def make_section(big_width, thickness):
+def make_hex(w):
     step = 360.0/6.0
 
     sides = None
     fx = 0
-    fy = big_width/2.0
+    fy = w/2.0
     px = math.nan
     py = math.nan
     
     for c in range(1,7):
         a = math.radians(c * step)
-        x = math.cos(a) * (big_width/2.0)
-        y = math.sin(a) * (big_width/2.0)
+        x = math.cos(a) * (w/2.0)
+        y = math.sin(a) * (w/2.0)
         line = None
         if px is math.nan:
             fx = x
@@ -38,15 +38,28 @@ def make_section(big_width, thickness):
     sides += Line((px, py), (fx, fy))
     return sides
 
+offsets = [(0, 0), (0, big_width), (0, big_width * 2),
+        (-0.85 * big_width, big_width * 0.5), (-0.85 * big_width, big_width * 1.5),
+        (0.85 * big_width, big_width * 0.5), (0.85 * big_width, big_width * 1.5)]
+
 sections = []
 for r in range(7):
-    section = make_section(big_width, thickness)
+    section = make_hex(big_width)
+    section = Pos(offsets[r][0], offsets[r][1]) * section
     sections.append(section)
 
-section = sections[0]
-section = Pos(0, big_width) * section
+big_hex= Pos(0,big_width) * make_hex(big_width * 3 + 30)
+bigger_hex= Pos(0,big_width) * make_hex(big_width * 3 + 40)
 
-show(section, sections[1])
+squares = [ 
+        Pos(big_width - 10,  -10)                * Rectangle(10, 10),
+        Pos(big_width - 10,  2 * big_width + 10) * Rectangle(10, 10),
+        Pos(-big_width + 10, -10)                * Rectangle(10, 10),
+        Pos(-big_width + 10, 2 * big_width + 10) * Rectangle(10, 10)
+        ]
+
+show(sections, big_hex, bigger_hex, squares)
+
 # show( outter_race)   
 
 #export_stl(inner_race, str(Path(sys.argv[0]).parent) + "\\inner_race.stl")
