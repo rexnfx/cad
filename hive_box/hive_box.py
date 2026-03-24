@@ -4,11 +4,12 @@ import math
 import copy
 from pathlib import Path
 import sys
+import trimesh
+import numpy as np
 
 thickness = 12
-width = 43
-big_width = 48
-
+width = 48
+clip_depth = 64.3
 
 def make_hex(w):
     step = 360.0/6.0
@@ -38,32 +39,32 @@ def make_hex(w):
     sides += Line((px, py), (fx, fy))
     return sides
 
-offsets = [(0, 0), (0, big_width), (0, big_width * 2),
-        (-0.85 * big_width, big_width * 0.5), (-0.85 * big_width, big_width * 1.5),
-        (0.85 * big_width, big_width * 0.5), (0.85 * big_width, big_width * 1.5)]
+offsets = [(0, 0), (0, width), (0, width * 2),
+        (-0.85 * width, width * 0.5), (-0.85 * width, width * 1.5),
+        (0.85 * width, width * 0.5), (0.85 * width, width * 1.5)]
 
 sects = []
 for r in range(7):
-    sect = make_hex(big_width)
+    sect = make_hex(width)
     sect = Pos(offsets[r][0], offsets[r][1]) * sect
     sects.append(sect)
 
 holes = []
 for r in range(7):
-    hole = make_hex(big_width / 1.8)
+    hole = make_hex(width / 1.8)
     hole = Pos(offsets[r][0], offsets[r][1]) * hole
     holes.append(hole)
 
-inside_big_hex= Pos(0,big_width) * make_hex(big_width * 3 + 26)
-big_hex= Pos(0,big_width) * make_hex(big_width * 3 + 30)
-bigger_hex= Pos(0,big_width) * make_hex(big_width * 3 + 40)
+outside_big_hex= Pos(0,width) * make_hex(width * 3 + 32)
+big_hex= Pos(0,width) * make_hex(width * 3 + 30)
+bigger_hex= Pos(0,width) * make_hex(width * 3 + 42)
 
 def get_squares(h, w):
     squares = [ 
-            Pos(big_width - 10,  -10)                * Rectangle(w, h),
-            Pos(big_width - 10,  2 * big_width + 10) * Rectangle(w, h),
-            Pos(-big_width + 10, -10)                * Rectangle(w, h),
-            Pos(-big_width + 10, 2 * big_width + 10) * Rectangle(w, h)
+            Pos(width - 10,  -10)                * Rectangle(w, h),
+            Pos(width - 10,  2 * width + 10) * Rectangle(w, h),
+            Pos(-width + 10, -10)                * Rectangle(w, h),
+            Pos(-width + 10, 2 * width + 10) * Rectangle(w, h)
             ]
     return squares
 
@@ -123,22 +124,58 @@ def make_top(bigger_hex, big_hex):
         squares[r] = extrude(square_holes[r], 4)
         top -= squares[r]
     return top
+
+def make_clip(depth):
+    depth -= 9
+    line = Line((0,0), (0,depth))
+    line += Line((0,depth), (2, depth))
+    line += Line((2,depth), (2, depth + 5))
+    line += Line((2,depth+5), (-2.5, depth + 5))
+    line += Line((-2.5,depth+5), (-2.5, depth/4))
+    line += Line((-2.5,depth/4), (-7, depth/4))
+    line += Line((-7,depth/4), (-7, depth+5))
+    line += Line((-7,depth+5), (-11.5, depth + 5))
+    line += Line((-11.5,depth+5), (-11.5, depth))
+    line += Line((-11.5,depth), (-9.5, depth))
+    line += Line((-9.5,depth), (-9.5, 0))
+    line += Line((-9.5,0), (-14.5, 0))
+    line += Line((-14.5,0), (-14.5, -4))
+    line += Line((-14.5,-4), (5, -4))
+    line += Line((5,-4), (5,0))
+    line += Line((5,0), (0,0))
+    clip_face = make_face(line)
+    clip = Pos (0, -190, 0) * extrude(clip_face, 9.5)
+    return clip
     
 bottom = Pos(190,0,0) * make_bottom(bigger_hex, big_hex, sects, holes)
 
 importer = Mesher()
 bee = importer.read(str(Path(sys.argv[0]).parent) + "\\Bee_Insert.stl")[0]
 bee = scale(bee, (4,4,3))
-bee_cut = Pos(0,190,-6) * copy.deepcopy(bee)
 
-top = Pos(0,145,0) * make_top(bigger_hex, big_hex)
+# Load mesh
+mesh = trimesh.load(str(Path(sys.argv[0]).parent) + "\\Bee_Insert.stl")
+# Inflate by moving vertices along normals
+offset = 0.22
+mesh.vertices += mesh.vertex_normals * offset
+# Export inflated mesh
+mesh.export(str(Path(sys.argv[0]).parent) + "\\inflatedBee_Insert.stl")
+importer2 = Mesher()
+bee_cut = importer2.read(str(Path(sys.argv[0]).parent) + "\\inflatedBee_Insert.stl")[0]
+bee_cut = Pos(0,190,-6) * scale(bee_cut, (4,4,3))
+
+top = Pos(0,145,0) * make_top(bigger_hex, outside_big_hex)
 top -= bee_cut
 
-show(top, bottom, bee)
+clip = make_clip(clip_depth)
+
+show(top, bottom, bee, clip)
 
 export_stl(bottom, str(Path(sys.argv[0]).parent) + "\\hive_box_bottom.stl")
 export_stl(top, str(Path(sys.argv[0]).parent) + "\\hive_box_top.stl")
 export_stl(bee, str(Path(sys.argv[0]).parent) + "\\bee.stl")
+export_stl(clip, str(Path(sys.argv[0]).parent) + "\\clip.stl")
+
 
 # show( outter_race)   
 
